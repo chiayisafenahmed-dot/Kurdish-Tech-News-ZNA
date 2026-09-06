@@ -1,4 +1,5 @@
 import os
+import time
 import feedparser
 import requests
 from google import genai
@@ -7,11 +8,17 @@ GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
+# لیستی ئارەزوومەندانەی سایتەکان (دەتوانیت گۆڕانکاری لەم لیستەدا بکەیت)
 RSS_FEEDS = [
     "https://techcrunch.com/feed/",
     "https://www.theverge.com/rss/index.xml",
-    "https://www.wired.com/feed/rss",
-    "https://feeds.feedburner.com/TechCrunch/"
+    "https://www.cnet.com/rss/news/",
+    "https://arstechnica.com/feed/",              # Ars Technica
+    "https://www.engadget.com/rss.xml",           # Engadget
+    "https://9to5mac.com/feed/",                  # 9to5Mac (ئەپڵ و تەکنەلۆژیا)
+    "https://androidcentral.com/feed",            # Android Central
+    "https://www.tomshardware.com/feeds/all"      # Tom's Hardware (هاردوێر و کۆمپیوتەر)
+    
 ]
 
 def run():
@@ -30,7 +37,8 @@ def run():
                 print(f"No entries found for {feed_url}")
                 continue
             
-            top_entries = feed.entries[:3]
+            # وەرگرتنی تەنها ٢ هەواڵی یەکەمی هەر سایتێک بۆ ئەوەی ڕێژەی API نەبەزێنێت
+            top_entries = feed.entries[:2]
 
             for entry in top_entries:
                 title = entry.get("title", "")
@@ -69,6 +77,9 @@ def run():
                 }
                 res = requests.post(telegram_url, json=payload)
                 print(f"Telegram response code: {res.status_code}")
+
+                # وەستان بۆ ماوەی ٥ چڕکە لە نێوان هەر هەواڵێکدا بۆ ڕێگریکردن لە هەڵەی Quota Exceeded
+                time.sleep(5)
 
         except Exception as e:
             print(f"Error processing {feed_url}: {e}")
