@@ -1,0 +1,4 @@
+feedparser
+google-genai
+google-generativeai
+requests
