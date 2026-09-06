@@ -8,16 +8,16 @@ TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
 RSS_FEEDS = [
-    "https://techcrunch.com/category/technology/feed/",
-    "https://www.cnet.com/rss/technology/",
-    "http://rss.cnn.com/rss/edition_technology.rss",
-    "https://www.theverge.com/rss/index.xml"
+    "https://techcrunch.com/feed/",
+    "https://www.theverge.com/rss/index.xml",
+    "https://www.wired.com/feed/rss",
+    "https://feeds.feedburner.com/TechCrunch/"
 ]
 
 def run():
     print("Checking environment variables...")
     if not GEMINI_API_KEY or not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
-        print("ERROR: Missing one or more secrets (API_KEY, BOT_TOKEN, CHAT_ID)")
+        print("ERROR: Missing secrets!")
         return
 
     client = genai.Client(api_key=GEMINI_API_KEY)
@@ -55,7 +55,7 @@ def run():
 """
 
                 response = client.models.generate_content(
-                    model="gemini-2.5-flash",
+                    model="gemini-3.6-flash",
                     contents=prompt,
                 )
 
@@ -69,8 +69,6 @@ def run():
                 }
                 res = requests.post(telegram_url, json=payload)
                 print(f"Telegram response code: {res.status_code}")
-                if res.status_code != 200:
-                    print(f"Telegram error response: {res.text}")
 
         except Exception as e:
             print(f"Error processing {feed_url}: {e}")
