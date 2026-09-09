@@ -13,7 +13,8 @@ RSS_FEEDS = [
     "https://techcrunch.com/feed/",
     "https://www.theverge.com/rss/index.xml",
     "https://www.cnet.com/rss/news/",
-    "https://arstechnica.com/feed/"
+    "https://arstechnica.com/feed/",
+    "https://www.wired.com/feed/rss"
 ]
 
 def run():
@@ -33,7 +34,6 @@ def run():
                 continue
             
             for entry in feed.entries[:5]:
-                # پشکنینی بەرواری هەواڵەکە (ئایا هی ئەمڕۆیە؟)
                 published_parsed = entry.get("published_parsed") or entry.get("updated_parsed")
                 if published_parsed:
                     entry_date = datetime(*published_parsed[:6], tzinfo=timezone.utc).date()
@@ -47,7 +47,7 @@ def run():
 
                 content = f"Title: {title}\nSummary: {summary}\nLink: {link}"
 
-   prompt = f"""
+                prompt = f"""
 تۆ ڕۆژنامەنووس و سەرنووسەرێکی پیشەگەری بواری تەکنەلۆژیایت و شارەزایی تەواوت لە ڕێنووس و زمانی کوردی سۆرانی هەیە.
 
 ئەرکی تۆ:
