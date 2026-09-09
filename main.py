@@ -1,5 +1,6 @@
 import os
 import time
+from datetime import datetime, timezone
 import feedparser
 import requests
 from google import genai
@@ -8,17 +9,12 @@ GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
-# لیستی ئارەزوومەندانەی سایتەکان (دەتوانیت گۆڕانکاری لەم لیستەدا بکەیت)
 RSS_FEEDS = [
     "https://techcrunch.com/feed/",
     "https://www.theverge.com/rss/index.xml",
     "https://www.cnet.com/rss/news/",
-    "https://arstechnica.com/feed/",              # Ars Technica
-    "https://www.engadget.com/rss.xml",           # Engadget
-    "https://9to5mac.com/feed/",                  # 9to5Mac (ئەپڵ و تەکنەلۆژیا)
-    "https://androidcentral.com/feed",            # Android Central
-    "https://www.tomshardware.com/feeds/all"      # Tom's Hardware (هاردوێر و کۆمپیوتەر)
-    
+    "https://arstechnica.com/feed/",
+    "https://www.wired.com/feed/rss"
 ]
 
 def run():
@@ -28,30 +24,36 @@ def run():
         return
 
     client = genai.Client(api_key=GEMINI_API_KEY)
+    today_date = datetime.now(timezone.utc).date()
 
     for feed_url in RSS_FEEDS:
         print(f"Fetching feed: {feed_url}")
         try:
             feed = feedparser.parse(feed_url)
             if not feed.entries:
-                print(f"No entries found for {feed_url}")
                 continue
             
-            # وەرگرتنی تەنها ٢ هەواڵی یەکەمی هەر سایتێک بۆ ئەوەی ڕێژەی API نەبەزێنێت
-            top_entries = feed.entries[:2]
+            for entry in feed.entries[:5]:
+                # پشکنینی بەرواری هەواڵەکە (ئایا هی ئەمڕۆیە؟)
+                published_parsed = entry.get("published_parsed") or entry.get("updated_parsed")
+                if published_parsed:
+                    entry_date = datetime(*published_parsed[:6], tzinfo=timezone.utc).date()
+                    if entry_date != today_date:
+                        print(f"Skipped old story ({entry_date}): {entry.get('title')}")
+                        continue
 
-            for entry in top_entries:
                 title = entry.get("title", "")
                 summary = entry.get("summary", "")
                 link = entry.get("link", "")
 
-                print(f"Processing story: {title}")
                 content = f"Title: {title}\nSummary: {summary}\nLink: {link}"
 
                 prompt = f"""
 تۆ ڕۆژنامەنووسێکی پیشەگەری باری تەکنەلۆژیایت.
 
-ئەم هەواڵە تەکنەلۆژیایە بە زمانی کوردی سۆرانی، بە شێوازی ئەکادیمی و ڕۆژنامەوانی زانستی و بێ خاڵبەندی دایبڕێژەرەوە.
+ئەرکی تۆ:
+١. هەڵسەنگاندنی زۆر توند بکە بۆ هەواڵەکە. ئەگەر هەواڵەکە زۆر گرنگ، باو یان کاریگەر نییە لەسەر جیهانی تەکنەلۆژیا، تەنها و تەنها بنووسە: IGNORE
+٢. ئەگەر هەواڵەکە زۆر گرنگ بوو، ڕاستەوخۆ بە زمانی کوردی سۆرانی بە شێوازی ئەکادیمی و بێ خاڵبەندی دایبڕێژەرەوە.
 
 شێوازی داڕشتن:
 - سەردێڕێکی بەهێز
@@ -69,6 +71,10 @@ def run():
 
                 result_text = response.text.strip()
 
+                if "IGNORE" in result_text or len(result_text) < 20:
+                    print(f"Skipped low-priority story: {title}")
+                    continue
+
                 telegram_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
                 payload = {
                     "chat_id": TELEGRAM_CHAT_ID,
@@ -76,9 +82,8 @@ def run():
                     "disable_web_page_preview": False
                 }
                 res = requests.post(telegram_url, json=payload)
-                print(f"Telegram response code: {res.status_code}")
+                print(f"Sent to Telegram: {title} (Status: {res.status_code})")
 
-                # وەستان بۆ ماوەی ٥ چڕکە لە نێوان هەر هەواڵێکدا بۆ ڕێگریکردن لە هەڵەی Quota Exceeded
                 time.sleep(5)
 
         except Exception as e:
