@@ -1,3 +1,10 @@
+کێشەکە بە تەواوی لە **بۆشاییی سەرەتای دێڕەکانە (Indentation)**.
+
+دێڕی `prompt = f"""` کەوتووەتە سەرەتای دێڕ بەبێ بۆشایی، بەمەش کۆدە بەستراوەکەی ناو `try:` و `for` پچڕاوە و پایتۆن وا تێگەیشتووە کە بەشی `try` بە تەواونەکراوی بەجێهێڵدراوە.
+
+ئەمەش تەواوی کۆدەکەیە بە چاککراوی و بە بۆشاییی دروست بۆ ئەوەی بێ کێشە لەسەر GitHub Actions کار بکات:
+
+```python
 import os
 import time
 from datetime import datetime, timezone
@@ -32,7 +39,7 @@ def run():
             feed = feedparser.parse(feed_url)
             if not feed.entries:
                 continue
-            
+
             for entry in feed.entries[:5]:
                 published_parsed = entry.get("published_parsed") or entry.get("updated_parsed")
                 if published_parsed:
@@ -47,7 +54,7 @@ def run():
 
                 content = f"Title: {title}\nSummary: {summary}\nLink: {link}"
 
-prompt = f"""
+                prompt = f"""
 تۆ سەرنووسەر و ڕۆژنامەنووسێکی باڵای بواری تەکنەلۆژیایت و شارەزاییەکی قووڵت لە داڕشتنی هەواڵی زانستی بە زمانی کوردیی سۆرانی هەیە
 
 ئەرکی سەرەکی:
@@ -75,7 +82,7 @@ prompt = f"""
 """
 
                 response = client.models.generate_content(
-                    model="gemini-3.6-flash",
+                    model="gemini-2.5-flash",
                     contents=prompt,
                 )
 
@@ -101,3 +108,5 @@ prompt = f"""
 
 if __name__ == "__main__":
     run()
+
+```
