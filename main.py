@@ -1,6 +1,8 @@
 import os
+import json
 import time
-from datetime import datetime, timezone
+import calendar
+from datetime import datetime, timedelta, timezone
 import feedparser
 import requests
 from google import genai
@@ -17,6 +19,24 @@ RSS_FEEDS = [
     "https://www.wired.com/feed/rss"
 ]
 
+MAX_AGE_HOURS = 24        # تەنها هەواڵی ٢٤ کاتژمێری ڕابردوو
+SEEN_FILE = "seen.json"   # لینکی هەواڵە پشکنراوەکان لێرە دەپارێزرێن
+SEEN_LIMIT = 1000
+
+
+def load_seen():
+    try:
+        with open(SEEN_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return []
+
+
+def save_seen(seen):
+    with open(SEEN_FILE, "w", encoding="utf-8") as f:
+        json.dump(seen[-SEEN_LIMIT:], f, ensure_ascii=False, indent=2)
+
+
 def run():
     print("Checking environment variables...")
     if not GEMINI_API_KEY or not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
@@ -24,26 +44,40 @@ def run():
         return
 
     client = genai.Client(api_key=GEMINI_API_KEY)
-    today_date = datetime.now(timezone.utc).date()
+    now = datetime.now(timezone.utc)
+    cutoff = now - timedelta(hours=MAX_AGE_HOURS)
+
+    seen = load_seen()
+    seen_set = set(seen)
 
     for feed_url in RSS_FEEDS:
         print(f"Fetching feed: {feed_url}")
         try:
             feed = feedparser.parse(feed_url)
             if not feed.entries:
+                print("No entries found in this feed")
                 continue
 
             for entry in feed.entries[:5]:
-                published_parsed = entry.get("published_parsed") or entry.get("updated_parsed")
-                if published_parsed:
-                    entry_date = datetime(*published_parsed[:6], tzinfo=timezone.utc).date()
-                    if entry_date != today_date:
-                        print(f"Skipped old story ({entry_date}): {entry.get('title')}")
-                        continue
-
                 title = entry.get("title", "")
                 summary = entry.get("summary", "")
                 link = entry.get("link", "")
+
+                if not link:
+                    continue
+
+                if link in seen_set:
+                    print(f"Already processed: {title}")
+                    continue
+
+                published_parsed = entry.get("published_parsed") or entry.get("updated_parsed")
+                if published_parsed:
+                    published = datetime.fromtimestamp(
+                        calendar.timegm(published_parsed), tz=timezone.utc
+                    )
+                    if published < cutoff:
+                        print(f"Skipped old story ({published.date()}): {title}")
+                        continue
 
                 content = f"Title: {title}\nSummary: {summary}\nLink: {link}"
 
@@ -79,11 +113,17 @@ def run():
                     contents=prompt,
                 )
 
-                result_text = response.text.strip()
+                result_text = (response.text or "").strip()
 
-                if "IGNORE" in result_text or len(result_text) < 20:
+                if result_text.upper().startswith("IGNORE") or len(result_text) < 20:
                     print(f"Skipped low-priority story: {title}")
+                    seen.append(link)
+                    seen_set.add(link)
                     continue
+
+                # سنووری درێژی نامەی تیلیگرام ٤٠٩٦ پیتە
+                if len(result_text) > 4000:
+                    result_text = result_text[:3990] + "..."
 
                 telegram_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
                 payload = {
@@ -91,13 +131,24 @@ def run():
                     "text": result_text,
                     "disable_web_page_preview": False
                 }
-                res = requests.post(telegram_url, json=payload)
-                print(f"Sent to Telegram: {title} (Status: {res.status_code})")
+                res = requests.post(telegram_url, json=payload, timeout=30)
+
+                if res.ok:
+                    print(f"Sent to Telegram: {title} (Status: {res.status_code})")
+                    seen.append(link)
+                    seen_set.add(link)
+                else:
+                    # هەڵە ئاشکرا دەکەین و لینکەکە تۆمار ناکەین تا جارێکی تر هەوڵ بدرێتەوە
+                    print(f"TELEGRAM ERROR {res.status_code}: {res.text}")
 
                 time.sleep(5)
 
         except Exception as e:
             print(f"Error processing {feed_url}: {e}")
+
+    save_seen(seen)
+    print("Done.")
+
 
 if __name__ == "__main__":
     run()
