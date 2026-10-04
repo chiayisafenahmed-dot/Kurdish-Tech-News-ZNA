@@ -19,6 +19,7 @@ RSS_FEEDS = [
     "https://www.wired.com/feed/rss"
 ]
 
+GEMINI_MODEL = "gemini-3.8-flash"   # ئەگەر ئەمە کار نەکرد: "gemini-flash-latest"
 MAX_AGE_HOURS = 24        # تەنها هەواڵی ٢٤ کاتژمێری ڕابردوو
 SEEN_FILE = "seen.json"   # لینکی هەواڵە پشکنراوەکان لێرە دەپارێزرێن
 SEEN_LIMIT = 1000
@@ -109,7 +110,7 @@ def run():
 """
 
                 response = client.models.generate_content(
-                    model="gemini-2.5-flash",
+                    model=GEMINI_MODEL,
                     contents=prompt,
                 )
 
