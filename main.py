@@ -26,7 +26,6 @@ RSS_FEEDS = [
 GEMINI_MODELS = [
     "gemini-3.8-flash",
     "gemini-flash-latest",
-    "gemini-2.5-flash",
 ]
 
 MAX_AGE_HOURS = 24           # تەنها هەواڵی ٢٤ کاتژمێری ڕابردوو
@@ -62,7 +61,7 @@ _working_model_index = 0
 def generate_text(client, prompt):
     """مۆدێلەکان بە ڕیز تاقی دەکاتەوە، و بۆ هەڵەی 503 چەند جارێک دووبارە هەوڵ دەدات"""
     global _working_model_index
-    last_error = None
+    errors = {}
     for i in range(_working_model_index, len(GEMINI_MODELS)):
         model = GEMINI_MODELS[i]
         for attempt in range(3):
@@ -71,14 +70,15 @@ def generate_text(client, prompt):
                 _working_model_index = i
                 return (response.text or "").strip()
             except Exception as e:
-                last_error = e
                 msg = str(e)
+                errors[model] = msg[:160]
                 print(f"Model {model} failed (attempt {attempt + 1}): {msg[:200]}")
                 if "503" in msg or "UNAVAILABLE" in msg:
                     time.sleep(15)   # داواکاری زۆرە، کەمێک چاوەڕێ دەکەین
                     continue
                 break                # 404 / 429 ... دەچینە مۆدێلی دواتر
-    raise AllModelsFailed(str(last_error))
+    summary = "\n\n".join(f"{m}: {err}" for m, err in errors.items())
+    raise AllModelsFailed(summary)
 
 
 def send_alert(text, seen, seen_set):
@@ -267,7 +267,7 @@ def run():
             "هیچ یەکێک لە مۆدێلەکانی Gemini کاری نەکرد\n"
             "ڕەنگە quotaی ڕۆژانە تەواو بووبێت یان ناوی مۆدێلەکان گۆڕابێت\n"
             "لیستی GEMINI_MODELS لە main.py بپشکنە\n\n"
-            f"هەڵە: {str(e)[:500]}",
+            f"هەڵەی هەر مۆدێلێک:\n{str(e)[:1500]}",
             seen,
             seen_set,
         )
