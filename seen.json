@@ -1,5 +1,4 @@
 [
-  "https://www.theverge.com/transportation/1017435/nhtsa-autonomous-vehicle-cyan-lighting-fmvss",
   "TITLE:Feds want robotaxis to signal ‘I’m driving’ with cyan-colored lights",
   "https://www.theverge.com/tech/1017450/meta-business-terms-delayed-ai-scraping",
   "TITLE:Meta delays new business terms after publisher pushback on AI scraping",
@@ -998,5 +997,6 @@
   "https://www.theverge.com/games/1029557/epic-games-launcher-is-coming-to-steamos",
   "TITLE:Epic Games Launcher is coming to SteamOS",
   "https://www.theverge.com/ai-artificial-intelligence/1029552/apple-siri-ai-agentic",
-  "TITLE:Apple is racing to make Siri more agentic"
+  "TITLE:Apple is racing to make Siri more agentic",
+  "ALERT:2026-11-09"
 ]
