@@ -1,6 +1,4 @@
 [
-  "TITLE:Feds want robotaxis to signal ‘I’m driving’ with cyan-colored lights",
-  "https://www.theverge.com/tech/1017450/meta-business-terms-delayed-ai-scraping",
   "TITLE:Meta delays new business terms after publisher pushback on AI scraping",
   "https://techcrunch.com/2026/10/23/lab-testing-giant-quest-diagnostics-confirms-patients-personal-and-health-data-was-compromised-during-breach/",
   "TITLE:Lab testing giant Quest Diagnostics confirms patients’ personal and health data was compromised during breach",
@@ -998,5 +996,7 @@
   "TITLE:Epic Games Launcher is coming to SteamOS",
   "https://www.theverge.com/ai-artificial-intelligence/1029552/apple-siri-ai-agentic",
   "TITLE:Apple is racing to make Siri more agentic",
-  "ALERT:2026-11-09"
+  "ALERT:2026-11-09",
+  "https://www.wired.com/story/the-home-depot-early-black-friday-deals-nov-2026/",
+  "ALERT:2026-11-10"
 ]
